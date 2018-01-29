@@ -13,6 +13,15 @@ $base_url = explode('/', $origin_url);
 array_pop($base_url);
 $base_url = implode('/', $base_url) . '/'; 
 
+// Forward username/password if it was there when index called
+if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
+	$origin_user = $_SERVER['PHP_AUTH_USER'];
+	$origin_pass = $_SERVER['PHP_AUTH_PW'];
+	$context = stream_context_create(array(
+		'http' => array('header' => "Authorization: Basic " . base64_encode("$origin_user:$origin_pass"),),
+	));
+}
+
 $configs = array(
 	'LOCAL'=>'local-sample.php',
 	//'EPSYTOUR'=>'epsytour.php', /* copy local.php file and edit target IP:PORT */
@@ -24,10 +33,10 @@ error_reporting(0);
 
 function getdataFromPeers()
 {
-	global $base_url, $configs;
+	global $base_url, $configs, $context;
 	$data = array();
 	foreach ($configs as $name => $conf) {
-		$json = file_get_contents($base_url.$conf);
+		$json = file_get_contents($base_url.$conf, false, $context);
 
 		$data[$name] = json_decode($json, TRUE);
 	}
